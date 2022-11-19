@@ -14,6 +14,7 @@ contract Voting {
 
     mapping(uint => Participants) public participants; // people who stand in election 
     address[] public voter;
+    address[] private listOfParticipants;
     uint private nextId;
     bool private isElectionStarted = false;
     bool private isElectionIsEnd = false;
@@ -22,10 +23,15 @@ contract Voting {
         owner = msg.sender;
     }
 
-    function addParticipant(string memory _name) public checkIfElectionIsEnd checkIfElectionIsStarted{
-        require(msg.sender != owner, "Owner can not become participant");
-        participants[nextId] = Participants(msg.sender, _name, 0);
-        nextId++;
+    modifier IsAlreayAdded() {
+        bool isContain = false;
+        for (uint i = 0; i < listOfParticipants.length; i++) {
+            if(listOfParticipants[i] == msg.sender){
+                isContain = true;
+            }
+        }
+        require(!isContain, "You already added to election");
+        _;
     }
 
     function endElection() public {
@@ -33,7 +39,7 @@ contract Voting {
     }
 
     function startElection() public {
-         isElectionStarted = true;
+            isElectionStarted = true;
     }
 
     modifier checkIfElectionIsStarted() {
@@ -44,6 +50,13 @@ contract Voting {
     modifier checkIfElectionIsEnd() {
         require(!isElectionIsEnd, "Election is ended");
         _;
+    }
+
+    function addParticipant(string memory _name) public checkIfElectionIsEnd checkIfElectionIsStarted IsAlreayAdded{
+        require(msg.sender != owner, "Owner can not become participant");
+        participants[nextId] = Participants(msg.sender, _name, 0);
+        listOfParticipants.push(msg.sender);
+        nextId++;
     }
 
     modifier IsAlreayVoted() {
